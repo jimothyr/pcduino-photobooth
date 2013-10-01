@@ -21,6 +21,8 @@ import threading, sys, contextlib, time, datetime, cv2
 from gpio import GPIO, light_ctrl
 from img_proc import make_contact_sheet
 from assets import assets
+from online import *
+
 
 class Application(Frame):
     
@@ -224,7 +226,9 @@ class Application(Frame):
         self.createWidgets()
         self.populateWidgets()
         
-
+#
+# check status
+phone_home()
 #initialise tk instance
 root = Tk()
 root.attributes("-fullscreen",1) #set to fullscreen
