@@ -22,6 +22,7 @@ from gpio import GPIO, light_ctrl
 from img_proc import make_contact_sheet
 from assets import assets
 from online import *
+#
 
 
 class Application(Frame):
