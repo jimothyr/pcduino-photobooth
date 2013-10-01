@@ -14,3 +14,11 @@ def phone_home():
 		print 'send stats'
 		print 'start syncing files!!'
 
+def write_out_data(data):
+	f=file
+
+	file = open("data.file.txt",'+a')
+	file.write(data)
+	file.close()
+	#write outs file list in form to be sucked in by javascript on webserver
+

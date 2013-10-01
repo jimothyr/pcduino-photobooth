@@ -1,0 +1,6 @@
+ - [ ] create web interface
+ - [ ] create data out from python
+ - [ ] create new event generator
+ - [ ] Pretty it all up
+ - [ ] add decent error catching
+ - [ ] intensive test
