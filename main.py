@@ -18,7 +18,7 @@ from Tkinter import *
 from os import path, makedirs, statvfs, remove
 from PIL import ImageTk, Image
 import threading, sys, contextlib, time, datetime, cv2
-from gpio import GPIO
+from gpio import GPIO, light_ctrl
 from img_proc import make_contact_sheet
 from assets import assets
 
@@ -54,13 +54,8 @@ class Application(Frame):
         
         root.update()
         
-        #switch on lights
-        #TODO move this to asset control class... abstract out for different interfaces
-        # for l in (14,15,16,17):
-        #     try:
-        #         g.setData(l,"HIGH")
-        #     except Exception, e:
-        #         raise e
+        self.l.setOn()
+     
 
         thbs=[]
         labels=[]
@@ -118,13 +113,7 @@ class Application(Frame):
       
         self.overlay.itemconfig(self.camtext, text="All Done, thanks")
         self.webcam=True
-         #switch off lights
-         #TODO abstract
-        # for l in (14,15,16,17):
-        #     try:
-        #         g.setData(l,"LOW")
-        #     except Exception, e:
-        #         raise e
+        
 
         #self.hi_there.config(state = NORMAL)
         print "building montage"
@@ -133,6 +122,8 @@ class Application(Frame):
         mf.save(path.join(self.a.folders['montages'],ts+".jpg"))
         #time.sleep(3)
         self.overlay.place_forget()
+        self.l.setOff()
+
         self.show_video()
 
     def quit_me(self,event):
@@ -220,6 +211,7 @@ class Application(Frame):
          #ensure environment is set up and ready to go.
         self.a = assets()
         self.g = GPIO()
+        self.l = light_ctrl()
         Frame.__init__(self, master)
         
         self.configure(background='#333',cursor='none')
