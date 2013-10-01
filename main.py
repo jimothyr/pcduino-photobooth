@@ -15,7 +15,6 @@
 
 
 from Tkinter import *
-#from mplayer import Player
 from os import path, makedirs, statvfs, remove
 from PIL import ImageTk, Image
 import threading, sys, contextlib, time, datetime, cv2
@@ -25,19 +24,24 @@ from assets import assets
 
 class Application(Frame):
     
-    def captureLoop(self,event):
-
-
-        self.webcam=False
-        self.capture=True
+    def captureLoop(self):
+        #TODO - sound 
+        #TODO - Lights
+        c = cv2.VideoCapture(self.a.devcam)
         #init countdown video
         
         #init GPIO lights
 
         #a.inputs("init")=True
     
-        self.vcam.set(3,self.capWidth)
-        self.vcam.set(4,self.capHeight)
+        # self.vcam.set(3,self.capWidth)
+        # self.vcam.set(4,self.capHeight)
+
+        c.set(3,10000)
+        c.set(4,10000)
+
+        capWidth =  int(c.get(3))
+        capHeight = int(c.get(4))
 
         ts = datetime.datetime.now().strftime("%Y%m%d%I%M_%s")
         
@@ -58,42 +62,36 @@ class Application(Frame):
         #     except Exception, e:
         #         raise e
 
-        self.thbs=[]
-        self.labels=[]
-        self.fnames=[]
+        thbs=[]
+        labels=[]
+        fnames=[]
 
         time.sleep(2)
 
         for j in [1,2,3,4]:
             ja=j-1
-            print("Taking image..." + str(j))
 
-            
-            self.overlay.itemconfig(self.camtext, text="3")
-            root.update()
-            time.sleep(1)
-
-            self.overlay.itemconfig(self.camtext, text="2")
-            root.update()
-            time.sleep(1)
-
-            self.overlay.itemconfig(self.camtext, text="1")
-            root.update()
-            time.sleep(1)
-            
-            self.overlay.itemconfig(self.camtext, text="Smile :)")
-            root.update()
-            time.sleep(1)
-            #some sort of osd thing
-            #setup paths
-            fn=path.join(a.folders['images'],ts+"_"+str(j)+".jpg")
-            fnthb = path.join(a.folders['thumbs'],ts+"_"+str(j)+".jpg")
-            self.fnames.append(fn)
+            print "setting file paths"
+            fn=path.join(self.a.folders['images'],ts+"_"+str(j)+".jpg")
+            fnthb = path.join(self.a.folders['thumbs'],ts+"_"+str(j)+".jpg")
+            fnames.append(fn)
             file = fn
+
+            print "showing countdown"
+
+            count=["3","2","1","Smile ya Bastard"]
+
+            for i in count:
+                self.overlay.itemconfig(self.camtext, text=i)
+                root.update()
+                time.sleep(0.5)
+
+            
+            print "Taking image " + str(j) + " at " + str(capWidth) + "x" + str(capHeight)
             #get image
-            for i in xrange(15):##while video is playing wait.
-                temp = self.vcam.read()
-            _b, camera_capture = self.vcam.read()#self.get_image(camera)
+            for i in xrange(15):#ramp up to ensure stable image
+                temp = c.read()
+            _b, camera_capture = c.read()#self.get_image(camera)
             #generate thumb
             cvthb = cv2.resize(camera_capture,(self.imageWidth,self.imageHeight))  
             cvthbcc = cv2.cvtColor(cvthb, cv2.COLOR_RGB2BGR)
@@ -101,11 +99,11 @@ class Application(Frame):
             #ima=Image.open(fnthb)
            
             #write to imageframe
-            self.thbs.append(ImageTk.PhotoImage(image=Image.fromarray(cvthbcc)))
+            thbs.append(ImageTk.PhotoImage(image=Image.fromarray(cvthbcc)))
             for child in self.imgs[ja].winfo_children():#clear out frame in case of hiccup
-    			child.destroy()
-            self.labels.append(Label(self.imgs[ja],image=self.thbs[ja]))
-            self.labels[ja].pack()
+                child.destroy()
+            labels.append(Label(self.imgs[ja],image=thbs[ja]))
+            labels[ja].pack()
             #self.imgs[j-1].create_image(0, 0, image= self.thbs[j-1])
             
              # write main image to disk
@@ -115,6 +113,8 @@ class Application(Frame):
             #time.sleep(3)
 
             root.update()
+
+        del(c)    
       
         self.overlay.itemconfig(self.camtext, text="All Done, thanks")
         self.webcam=True
@@ -127,44 +127,35 @@ class Application(Frame):
         #         raise e
 
         #self.hi_there.config(state = NORMAL)
-        mf = make_contact_sheet(self.fnames,(1,4),(self.capWidth,self.capHeight),(10,10,10,10),10)
-        mf.save(path.join(a.folders['montages'],ts+".jpg"))
-        time.sleep(3)
+        print "building montage"
+        mf = make_contact_sheet(fnames,(1,4),(capWidth,capHeight),(10,10,10,10),10)
+        print "saving montage"
+        mf.save(path.join(self.a.folders['montages'],ts+".jpg"))
+        #time.sleep(3)
         self.overlay.place_forget()
         self.show_video()
 
     def quit_me(self,event):
-        self.webcam=False #kill webcam loop
+        print "quit asked for"
+        self.quit_x=True
+        self.webcam=False
+        
         #clean up to ensure webcam released
-        try:
-            del(self.vcam)
-        except Exception, e:
-            pass
-       
         self.quit()
 
-    def initialise_camera(self):
-        #check for camera existing
-        self.vcam = cv2.VideoCapture(a.devcam)
-        self.capWidth=1680#1920 #preferred image capture size
-        self.capHeight=950#1080 
-        #set what we can
-        self.vcam.set(3,self.capWidth)
-        self.vcam.set(4,self.capHeight)
-        #check resolution and set image size
-        self.vcamWidth=self.vcam.get(3)
-        self.vcamHeight=self.vcam.get(4)   
-        self.vcamAspect=self.vcamWidth/self.vcamHeight 
-        #check for true on read
-        #put webcam in video frame
-    def show_video(self):
-        vwin=self.movie_window
+    def init_capture(self, event):
+        print "left mouse button clicked"
+        self.webcam=False   
 
-        self.vcam.set(3,vwin.config("width")[4])
-        self.vcam.set(4,vwin.config("height")[4])
+    def show_video(self):
+        
+        vwin=self.movie_window
+        c=cv2.VideoCapture(self.a.devcam)
+        #c.set(3,vwin.config("width")[4])
+        #c.set(4,vwin.config("height")[4])
         
         while(self.webcam==True):
-            (_b,f) = self.vcam.read()
+            (_b,f) = c.read()
             f =cv2.flip(f, 1)
             gray_im = cv2.cvtColor(f, cv2.COLOR_RGB2BGR)
             a = Image.fromarray(gray_im)
@@ -176,6 +167,11 @@ class Application(Frame):
 
             root.update()
     
+        del(c)
+        if (self.quit_x==False):
+            self.captureLoop()
+        
+
     def printme(self,event):
         print "hello" + str(event.x)
 
@@ -185,17 +181,16 @@ class Application(Frame):
             self.quit_me()
     
     def createWidgets(self):
-        self.initialise_camera()
         w, h = self.winfo_screenwidth(), self.winfo_screenheight()
         #work out best geometry based on screen size and set movie size      
         self.movieHeight=int(h*0.6)
-        self.movieWidth=int(self.movieHeight*self.vcamAspect)
+        self.movieWidth=int(self.movieHeight*self.a.camRes[2])
         
         self.imageHeight=int(h*0.2)
-        self.imageWidth=int(self.imageHeight*self.vcamAspect)
+        self.imageWidth=int(self.imageHeight*self.a.camRes[2])
 
-        self.vcam.set(3,self.movieWidth)
-        self.vcam.set(4,self.movieHeight)
+        #self.vcam.set(3,self.movieWidth)
+        #self.vcam.set(4,self.movieHeight)
        
         #webcam window
         self.movie_window = Label(self, height=self.movieHeight,  bg="#333")
@@ -215,16 +210,20 @@ class Application(Frame):
 
         self.camtext = self.overlay.create_text(200, 200, text="Ready", font=("helvetica",60), fill="white")
         
-       
     def populateWidgets(self):
-        t = threading.Thread(target=self.show_video())
-        t.start()
-            
+        # t = threading.Thread(target=self.show_video(a.devcam))
+        # t.start()
+        self.quit_x=False
+        self.show_video()
+
     def __init__(self, master=None):
+         #ensure environment is set up and ready to go.
+        self.a = assets()
+        self.g = GPIO()
         Frame.__init__(self, master)
         
         self.configure(background='#333',cursor='none')
-        master.bind("<Button-1>",self.captureLoop)
+        master.bind("<Button-1>",self.init_capture)
         master.bind("<Button-3>",self.quit_me)
         self.focus_set()
         self.pack()
@@ -233,9 +232,7 @@ class Application(Frame):
         self.createWidgets()
         self.populateWidgets()
         
- #ensure environment is set up and ready to go.
-a = assets()
-g = GPIO()
+
 #initialise tk instance
 root = Tk()
 root.attributes("-fullscreen",1) #set to fullscreen

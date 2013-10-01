@@ -42,11 +42,16 @@ class assets():
         
         self.devcam=0
 
-    def camCheck(self): #check for camera and return message if none detected
+  
+
+    def camCheck(self): 
+    	#check for camera and return dev id , max res of first found
+    	#return message if none detected
+        #TODO - check for resolution and aspect ratio.
         print("checking camera exists")
         #check all cameras
         for x in (0,1,2,3):
-        	print "Testing camera " + str(x)
+        	print "Testing for existance of camera " + str(x)
         	c=cv2.VideoCapture(x)
         	r=c.read()[0]
         	if r:
@@ -54,7 +59,30 @@ class assets():
         		return x
         	del(c)
         return ("None found")
-        
+
+    def camResCheck(self,camId):
+    	print "checking resolution of camera " + str(camId)
+    	c=cv2.VideoCapture(camId)
+    	#set stupidly high values and see what sticks
+        Width=10000
+        Height=10000
+        #set 
+        c.set(3,Width)
+        c.set(4,Height)
+        #check resolution in output file
+        # for i in xrange(15):#ramp up to ensure stable image
+        #         temp = c.read()
+        # _b, camera_capture = c.read()#self.get_image(camera)
+        # cv2.imwrite("test.jpg", camera_capture)#main
+
+        res=[int(c.get(3)),int(c.get(4)),c.get(3)/c.get(4)] #width,height,aspect_ratio
+        del(c) #release camera
+
+        print "max resolution of " + str(res[0]) + " x " + str(res[1]) + " found"
+        return res
+      
+    	
+
     def storageCheck(self,vname):
 		retval=(False,"Not Tested","Not Found")
 		w=False
@@ -87,5 +115,6 @@ class assets():
         self.assetPaths()
         self.webConfig()
         self.folderCheck()
-        self.devcam=self.camCheck() 
+        self.devcam=self.camCheck()
+        self.camRes=self.camResCheck(self.devcam)
         self.gpio()   
